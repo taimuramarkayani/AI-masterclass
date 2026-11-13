@@ -1,0 +1,41 @@
+name: Session 10 lab
+ 
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "What to run"
+        type: choice
+        options:
+          - ask
+          - analyst
+          - sandbox-test
+          - test-analyst
+        default: analyst
+      question:
+        description: "Your question (used by ask and analyst)"
+        type: string
+        default: "On how many days in the last 60 days was the high above 40 C?"
+ 
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Run
+        shell: bash
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          MODE: ${{ inputs.mode }}
+          QUESTION: ${{ inputs.question }}
+        run: python weather_log.py "$MODE" "$QUESTION" | tee output.txt
+      - name: Show the result on the run page
+        if: always()
+        run: |
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat output.txt >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
